@@ -1,6 +1,6 @@
-# myPythonDockerRepo
+# Creation of Docker Image and Pushing it to the Elastic Container Registry (ECR)
 This a python based app and containerized.
-you can clone - https://github.com/akannan1087/myPythonDockerRepo/.
+you can clone - https://github.com/joshking1/myPythonDockerRepo.git
 This repo also have Jenkinsfile for automating the following:
 
 - Automating Docker image creation
