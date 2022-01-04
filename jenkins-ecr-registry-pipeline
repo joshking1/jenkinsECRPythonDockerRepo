@@ -1,0 +1,49 @@
+pipeline {
+    agent any
+    
+    environment {
+        registry = "232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo"
+    }
+    stages {
+        stage ("Git Checkout") {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'GIT_HUB_CREDENTIALS', url: 'https://github.com/joshking1/myPythonDockerRepo.git']]])
+            }
+        }
+        stage ("Building image") {
+            steps {
+                script {
+                    dockerImage = docker.build registry
+                }
+            }
+        }
+        stage('Pushing Login and Tag of Image') {
+            steps {
+                script {
+                    sh 'aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 232110768834.dkr.ecr.us-east-2.amazonaws.com'
+                    sh 'docker tag mydockerrepo:latest 232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo:latest'
+                }
+            }
+        }
+        stage('Pushing to ECR') {
+            steps {
+                script {
+                    sh 'docker push 232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo:latest'
+                }
+            }
+        }
+        stage('stop previous containers') {
+            steps {
+                sh 'docker ps -f name=mypythonContainer -q | xargs --no-run-if-empty docker container stop'
+                sh 'docker container ls -a -fname=mypythonContainer -q | xargs -r docker container rm'
+            }
+        }
+        stage('Docker Run') {
+            steps {
+                script {
+                    sh 'docker run -itd -p 8096:5000 --name mypythonContainer 232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo:latest'
+                }
+            }
+        }
+    }
+}
