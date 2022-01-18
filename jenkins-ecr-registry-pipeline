@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        registry = "232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo"
+        registry = "325864094195.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo"
     }
     stages {
         stage ("Git Checkout") {
@@ -10,19 +10,40 @@ pipeline {
                 checkout([$class: 'GitSCM', branches: [[name: '*/master']], extensions: [], userRemoteConfigs: [[credentialsId: 'GIT_HUB_CREDENTIALS', url: 'https://github.com/joshking1/jenkinsECRPythonDockerRepo.git']]])
             }
         }
-        stage ("Building image") {
+        stage ("Docker Version") {
             steps {
                 script {
-                    dockerImage = docker.build registry
+                     sh "docker version"
                 }
             }
         }
-        stage('Pushing Login and Tag of Image') {
+        stage ("Building image") {
             steps {
                 script {
-                    sh 'aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 232110768834.dkr.ecr.us-east-2.amazonaws.com'
-                    sh 'docker tag mydockerrepo:latest 232110768834.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo:latest'
+                    sh "docker build -t mydockerrepo ."
                 }
+            }
+        }
+        
+       stage ("Docker Image List") {
+            steps {
+                script {
+                     sh "docker image list"
+                }
+            }
+        }
+        stage('Image Tag') {
+            steps {
+                script {
+                    sh "docker tag mydockerrepo:latest 325864094195.dkr.ecr.us-east-2.amazonaws.com/mydockerrepo:latest"
+                }
+            }
+        }
+        stage('Image Login') {
+            steps {
+                script {
+                    sh "sudo aws ecr get-login-password --region us-east-2 | docker login --username AWS --password-stdin 325864094195.dkr.ecr.us-east-2.amazonaws.com"
+                  }
             }
         }
         stage('Pushing to ECR') {
